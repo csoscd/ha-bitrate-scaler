@@ -19,7 +19,6 @@ from .const import (
     MODE_FIXED_WITH_ATTR,
 )
 
-
 # -----------------------------
 # Hilfsfunktionen für Auswahl
 # -----------------------------
@@ -118,53 +117,3 @@ class BitrateScalerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "mode": user_input["mode"],
             "precision": user_input["precision"],
             "thresholds": {
-                "kbps": user_input["threshold_kbit"],
-                "mbps": user_input["threshold_mbit"],
-            },
-            "sources": sources,
-            "aliases": {},  # Alias-Mapping wird später im Options-Flow gepflegt
-        }
-
-        title = f"Bitrate Scaler ({len(sources)} Quellen)"
-        return self.async_create_entry(title=title, data=data)
-
-    async def async_step_import(self, user_input: Dict[str, Any]):
-        """Optionaler YAML-Import: re-use der user-Logik."""
-        return await self.async_step_user(user_input)
-
-
-# -----------------------------
-# Options-Flow (Nachpflege)
-# -----------------------------
-class BitrateScalerOptionsFlow(config_entries.OptionsFlow):
-    """Options-Flow: Modus/Schwellen/Quellen + Alias-Namen je Quelle."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self._entry = config_entry
-        # Temporäre Puffer für Schritt 1
-        self._tmp_sources: List[str] = []
-        self._tmp_mode: str = DEFAULT_MODE
-        self._tmp_precision: int = DEFAULT_PRECISION
-        self._tmp_kbit: int = DEFAULT_KBIT_THRESHOLD
-        self._tmp_mbit: int = DEFAULT_MBIT_THRESHOLD
-
-    async def async_step_init(self, user_input: Dict[str, Any] | None = None):
-        """Schritt 1: Modus/Präzision/Schwellen + (neu) Quellen auswählen."""
-        data = self._entry.data
-        mode = data.get("mode", DEFAULT_MODE)
-        precision = data.get("precision", DEFAULT_PRECISION)
-        thresholds = data.get("thresholds", {})
-        kbit = thresholds.get("kbps", DEFAULT_KBIT_THRESHOLD)
-        mbit = thresholds.get("mbps", DEFAULT_MBIT_THRESHOLD)
-        sources = data.get("sources", [])
-
-        selector = _build_sources_selector(self.hass)
-
-        options_schema = vol.Schema(
-            {
-                vol.Required("mode", default=mode): vol.In(
-                    [MODE_FIXED_WITH_ATTR, MODE_DYNAMIC_UNIT]
-                ),
-                vol.Required("precision", default=precision): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=4)
-                ),
