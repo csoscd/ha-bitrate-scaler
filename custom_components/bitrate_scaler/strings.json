@@ -1,0 +1,27 @@
+
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Bitrate Scaler einrichten",
+        "description": "Wähle Modus, Präzision, Schwellen und die Quell-Sensoren."
+      }
+    },
+    "error": {
+      "no_sources": "Bitte mindestens einen Sensor auswählen.",
+      "no_matching_entities": "Keine passenden Sensoren gefunden (sensor.*.rx/tx)."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bitrate Scaler Optionen",
+        "description": "Passe Modus, Präzision, Schwellen und die Quell-Sensoren an."
+      },
+      "aliases": {
+        "title": "Alias-Namen je Quelle",
+        "description": "Vergib einen individuellen Anzeigenamen pro Sensor."
+      }
+    }
+  }
+}
