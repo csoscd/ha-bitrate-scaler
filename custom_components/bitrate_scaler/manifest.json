@@ -2,7 +2,7 @@
 {
   "domain": "bitrate_scaler",
   "name": "Bitrate Scaler",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "documentation": "https://github.com/csoscd/ha-bitrate-scaler",
   "requirements": [],
   "codeowners": ["csoscd"],
