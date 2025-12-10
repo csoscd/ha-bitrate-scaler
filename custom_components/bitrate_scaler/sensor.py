@@ -1,4 +1,3 @@
-
 # custom_components/bitrate_scaler/sensor.py
 from __future__ import annotations
 
@@ -103,7 +102,7 @@ class BitrateScalerSensor(SensorEntity):
         # Geräteeigenschaften (falls verfügbar)
         if HAS_DEVICE_CLASS:
             self._attr_device_class = SensorDeviceClass.DATA_RATE
-            self._attr_state_class = SensorStateClass.MEASUREMENT
+            self._attr_state_class = SensorStateClass.MEASUREMENT  # type: ignore
 
         # Einheit im FIXED-Modus (für stabile Historie)
         if self._mode == MODE_FIXED_WITH_ATTR:
@@ -194,7 +193,6 @@ class BitrateScalerSensor(SensorEntity):
             attrs["display_value_str"] = f"{self._display_value:.{self._precision}f} {self._display_unit}"
         return attrs
 
-    # Neuere HA-Versionen bevorzugen native_* Properties
     @property
     def native_value(self) -> StateType:
         """
@@ -226,5 +224,28 @@ class BitrateScalerSensor(SensorEntity):
         return round(raw, self._precision)
 
     @property
-    def native_unit_of_measurement(self) -> Optional[str]:
+    def native_unit_of_measurement(self) -> str | None:
         """
+        Unit for the native_value:
+        - dynamic_unit: scaled unit (bit/s, kbit/s, Mbit/s)
+        - fixed_unit_with_attribute: "bit/s"
+        """
+        if self._mode == MODE_DYNAMIC_UNIT:
+            # Einheit wechselt abhängig vom zuletzt skalierten Wert
+            return self._display_unit
+        # FIXED
+        return "bit/s"
+
+    # ---------------------------
+    # Device Info (optional)
+    # ---------------------------
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
+        """Group all derived sensors under one virtual device."""
+        return {
+            "identifiers": {(DOMAIN, "bitrate_scaler")},
+            "name": "Bitrate Scaler",
+            "manufacturer": "Custom",
+            "model": "Bitrate Scaler Helper",
+        }
