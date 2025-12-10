@@ -1,7 +1,9 @@
+
 # custom_components/bitrate_scaler/config_flow.py
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Any, Dict, List, Optional
 
 import voluptuous as vol
@@ -19,35 +21,45 @@ from .const import (
     MODE_FIXED_WITH_ATTR,
 )
 
+# Regex: erlaubt Buchstaben/Zahlen/Unterstrich/Bindestrich vor Suffix _rx / _tx
+PATTERN_RXTX = re.compile(r"^sensor\.[\w\-]+_(rx|tx)$", re.IGNORECASE)
+
+
 # -----------------------------
 # Hilfsfunktionen für Auswahl
 # -----------------------------
 def _gather_matching_entities(hass: HomeAssistant) -> List[str]:
-    """
-    Liefert alle entity_ids, die dem Muster sensor.*.rx bzw. sensor.*.tx entsprechen.
-    Nutzt das State-Register (kein Polling).
-    """
+    """Finde alle sensor.* mit Unterstrich-Suffix '_rx' oder '_tx'."""
     matches: List[str] = []
     for st in hass.states.async_all():
         eid = st.entity_id
-        if not eid.startswith("sensor."):
-            continue
-        if eid.endswith(".rx") or eid.endswith(".tx"):
+        if PATTERN_RXTX.match(eid):
             matches.append(eid)
     return sorted(matches)
 
 
+def _gather_all_sensors(hass: HomeAssistant) -> List[str]:
+    """Fallback: alle sensor.* Entitäten (nur wenn keine RX/TX gefunden wurden)."""
+    return sorted(
+        [st.entity_id for st in hass.states.async_all() if st.entity_id.startswith("sensor.")]
+    )
+
+
 def _build_sources_selector(hass: HomeAssistant) -> sel.EntitySelector:
     """
-    Baut einen EntitySelector, der ausschließlich die dynamisch ermittelten
-    'sensor.*.rx' / 'sensor.*.tx' zur Auswahl anbietet.
+    EntitySelector:
+      - Wenn Kandidaten gefunden → include_entities = Kandidaten
+      - Sonst → include_entities = alle sensor.* (Fallback)
     """
     candidates = _gather_matching_entities(hass)
+    if not candidates:
+        candidates = _gather_all_sensors(hass)
+
     return sel.EntitySelector(
         sel.EntitySelectorConfig(
             domain="sensor",
             multiple=True,
-            include_entities=candidates,  # gültiger Key in aktuellen HA-Versionen
+            include_entities=candidates,
         )
     )
 
@@ -83,13 +95,11 @@ class BitrateScalerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: Dict[str, Any] | None = None):
         errors: Dict[str, str] = {}
 
-        # Prüfen, ob überhaupt passende Entitäten vorhanden sind
-        candidates = _gather_matching_entities(self.hass)
-        schema = _user_schema(self.hass)
+        # Hinweis statt harter Fehler, wenn noch keine passenden Entitäten existieren
+        if not _gather_matching_entities(self.hass):
+            errors["sources"] = "no_matching_entities_hint"
 
-        if not candidates:
-            # Formular anzeigen, aber mit Fehlerhinweis
-            errors["sources"] = "no_matching_entities"
+        schema = _user_schema(self.hass)
 
         if user_input is None:
             return self.async_show_form(
@@ -178,12 +188,12 @@ class BitrateScalerOptionsFlow(config_entries.OptionsFlow):
         )
 
         if user_input is None:
-            # Fehlerhinweis, wenn aktuell keine passenden Entitäten existieren
+            # Hinweis, falls aktuell keine passenden RX/TX-Entitäten existieren
             if not _gather_matching_entities(self.hass):
                 return self.async_show_form(
                     step_id="init",
                     data_schema=options_schema,
-                    errors={"sources": "no_matching_entities"},
+                    errors={"sources": "no_matching_entities_hint"},
                 )
             return self.async_show_form(step_id="init", data_schema=options_schema)
 
