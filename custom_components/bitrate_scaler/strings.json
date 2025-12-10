@@ -9,7 +9,7 @@
     },
     "error": {
       "no_sources": "Bitte mindestens einen Sensor auswählen.",
-      "no_matching_entities": "Keine passenden Sensoren gefunden (sensor.*.rx/tx)."
+      "no_matching_entities_hint": "Keine passenden RX/TX-Sensoren gefunden. Es werden alle sensor.* zur Auswahl angeboten."
     }
   },
   "options": {
@@ -22,6 +22,9 @@
         "title": "Alias-Namen je Quelle",
         "description": "Vergib einen individuellen Anzeigenamen pro Sensor."
       }
+    },
+    "error": {
+      "no_matching_entities_hint": "Keine passenden RX/TX-Sensoren gefunden. Es werden alle sensor.* zur Auswahl angeboten."
     }
   }
 }
